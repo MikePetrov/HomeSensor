@@ -1,7 +1,7 @@
 /*
 *	Не содержит ОТА функций
 *
-*	CSS811
+*	CCS811
 *    VDD - подключается к выводу 3,3V.
 *    GND - подключается к выводу GND.
 *    SCL - подключается к линии тактирования SCL шины I2C
@@ -10,7 +10,15 @@
 *    INT - не используется.
 *    RST - не используется.
 *    ADD - не используется.
-*
+*	SHT21 (SHT1x and SHT7x)
+*    адрес I2C фиксированный 0x80
+0xE3 — Измерить температуру. При этом на время измерения линия SCL будет прижата к земле.
+0xE5 — Измерить влажность. Линия SCL так-же прижимается к земле на время измерения.
+0xF3 — Измерить температуру. На этот раз датчик не прижимает линию SCL на время замера.
+0xF5 — Измерить влажность. Линия SCL не прижимается.
+0xE6 — Записать данные в пользовательский регистр.
+0xE7 — Прочитать данные из пользовательского регистра.
+0xFE — Перезагрузить датчик. 
 *
 */
 #include <SPI.h>
@@ -18,6 +26,8 @@
 
 #include "Adafruit_CCS811.h"
 // По умолчанию адрес датчика в библиотеке 0x5A
+#include <Sodaq_SHT2x.h>
+
 
 #include <ESP8266WiFi.h>
 
@@ -75,38 +85,62 @@ void loop() {
 	
 	String req = client.readStringUntil('\r');
 	client.flush();
+	
+	float data = 0;
 	float output = 0;
 
-	if(ccs.available()){
-		float temp = ccs.calculateTemperature();
-		if(!ccs.readData()){
-			Serial.print("eCO2: ");
-			if (req.indexOf("/eCO2") != -1)
-				float eCO2 = ccs.geteCO2();
-				output = eCO2;
-				Serial.print(eCO2);
-      
-			else if (req.indexOf("/TVOC") != -1)
-				Serial.print(" ppm, TVOC: ");      
-				float TVOC = ccs.getTVOC();
-				output = TVOC;
-				Serial.print(TVOC);
-		
-			else if (req.indexOf("/temperature") != -1)
-				Serial.print(" ppb   Temp:");
-				output = temp;
-				Serial.println(temp);
+	if (req.indexOf("/humidity") != -1)
+		float output = SHT2x.GetHumidity();
+	else if (req.indexOf("/temperature1") != -1)
+		float output = SHT2x.GetTemperature();
+	else if (req.indexOf("/dewpoint") != -1)
+		float output = SHT2x.GetDewPoint();
+	
+	else if (req.indexOf("/eCO2") != -1)
+		if(ccs.available()){
+			float data = ccs.geteCO2();
+			if(!ccs.readData()){
+				Serial.print("eCO2: ");
+				float output = data;
+				Serial.print(data);
 			else {
-				Serial.println("invalid request");
-				client.stop();
+				Serial.println("invalid request to CCS811");
 				return;
+				}
 			}
 		}
-		else{
-			Serial.println("ERROR!");
-			while(1);
+	else if (req.indexOf("/TVOC") != -1)
+		if(ccs.available()){
+			float output = ccs.getTVOC();
+			if(!ccs.readData()){
+				Serial.print("TVOC: ");
+				float output = data;
+				Serial.print(data);
+			else {
+				Serial.println("invalid request to CCS811");
+				return;
+				}
+			}
 		}
-	}
+	else if (req.indexOf("/temperature2") != -1)
+		if(ccs.available()){
+			float output = ccs.calculateTemperature();
+			if(!ccs.readData()){
+				Serial.print("Temp: ");
+				float output = data;
+				Serial.print(data);
+			else {
+				Serial.println("invalid request to CCS811");
+				return;
+				}
+			}
+		}
+	else{
+		Serial.println("ERROR! NO DATA !!!");
+		while(1);
+		}
+}
+	
 delay(500);
 
 	client.flush();
