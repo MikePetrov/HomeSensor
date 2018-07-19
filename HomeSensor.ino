@@ -103,10 +103,10 @@ void loop() {
 				Serial.print("eCO2: ");
 				float output = data;
 				Serial.print(data);
+			}
 			else {
 				Serial.println("invalid request to CCS811");
 				return;
-				}
 			}
 		}
 	else if (req.indexOf("/TVOC") != -1)
@@ -116,10 +116,10 @@ void loop() {
 				Serial.print("TVOC: ");
 				float output = data;
 				Serial.print(data);
+			}
 			else {
 				Serial.println("invalid request to CCS811");
 				return;
-				}
 			}
 		}
 	else if (req.indexOf("/temperature2") != -1)
@@ -129,17 +129,16 @@ void loop() {
 				Serial.print("Temp: ");
 				float output = data;
 				Serial.print(data);
+			} 
 			else {
 				Serial.println("invalid request to CCS811");
 				return;
-				}
 			}
 		}
 	else{
 		Serial.println("ERROR! NO DATA !!!");
 		while(1);
 		}
-}
 	
 delay(500);
 
