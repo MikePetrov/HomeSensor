@@ -24,7 +24,7 @@
 #include <SPI.h>
 #include <Wire.h>
 
-#include "Adafruit_CCS811.h"
+#include <Adafruit_CCS811.h>
 // По умолчанию адрес датчика в библиотеке 0x5A
 #include <Sodaq_SHT2x.h>
 
