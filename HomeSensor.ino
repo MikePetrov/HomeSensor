@@ -1,7 +1,7 @@
 /*
 *	Не содержит ОТА функций
 *
-*	BME280 by Tyler Glenn
+*	CCS811
 *    VDD - подключается к выводу 3,3V.
 *    GND - подключается к выводу GND.
 *    SCL - подключается к линии тактирования SCL шины I2C
@@ -10,24 +10,24 @@
 *    INT - не используется.
 *    RST - не используется.
 *    ADD - не используется.
-*	SHT21 (SHT1x and SHT7x)
-*    адрес I2C фиксированный 0x80
-0xE3 — Измерить температуру. При этом на время измерения линия SCL будет прижата к земле.
-0xE5 — Измерить влажность. Линия SCL так-же прижимается к земле на время измерения.
-0xF3 — Измерить температуру. На этот раз датчик не прижимает линию SCL на время замера.
-0xF5 — Измерить влажность. Линия SCL не прижимается.
-0xE6 — Записать данные в пользовательский регистр.
-0xE7 — Прочитать данные из пользовательского регистра.
-0xFE — Перезагрузить датчик. 
+*	
+	BME280 by Tyler Glenn library
+Connecting the BME280 Sensor:
+Sensor              ->  Board
+-----------------------------
+Vin (Voltage In)    ->  3.3V
+Gnd (Ground)        ->  Gnd
+SDA (Serial Data)   ->  D2 on ESP8266
+SCK (Serial Clock)  ->  D1 on ESP8266
 *
 */
-#include <SPI.h>
+
 #include <Wire.h>
 
-#include <Adafruit_CCS811.h>
-// По умолчанию адрес датчика в библиотеке 0x5A
-#include <Sodaq_SHT2x.h>
+#include <EnvironmentCalculations.h>
+#include <BME280I2C.h>
 
+#define SERIAL_BAUD 115200
 
 #include <ESP8266WiFi.h>
 
@@ -36,10 +36,16 @@ const char* password = "your-password";
 
 WiFiServer server(80);
 
-Adafruit_CCS811 ccs;
+BME280I2C bme;    // Default : forced mode, standby time = 1000 ms
+                  // Oversampling = pressure ×1, temperature ×1, humidity ×1, filter off,
+
 
 void setup() {  
-	Serial.begin(115200);
+	Serial.begin(SERIAL_BAUD);
+	while(!Serial) {} // Ждемс...! (на период отладки)
+	
+	Wire.begin();
+	
 	Serial.println();
   
 	Serial.print("Connecting to ");
@@ -60,17 +66,11 @@ void setup() {
 	Serial.println(WiFi.localIP());
 
 
-	if(!ccs.begin()){
-		Serial.println("Failed to start sensor CCS811! Please check wiring.");
+	if(!bme.begin()){
+		Serial.println("Failed to start or not find BME280 sensor! Please check wiring.");
 		while(1);
 	}
   
-  // по умолчанию мы будем генерировать высокое напряжение от линии 3.3v внутри! (Аккуратно!)
-  
-  //calibrate temperature sensor
-	while(!ccs.available());
-	float temp = ccs.calculateTemperature();
-	ccs.setTempOffset(temp - 25.0);
 }
 
 void loop() {
